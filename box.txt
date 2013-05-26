@@ -1,0 +1,256 @@
+local miningTime=4
+local partnerID=0
+local myID=os.getComputerID()
+local digDelay=1
+local reserveFuelLevel=10
+local chargeLevel=500
+local debug=false
+
+function checkStatus()
+    if debug==true then
+        print("In checkStatus")
+    end
+
+    if turtle.getItemCount(1)>0 then
+        print("Ender Chest OK")
+    else
+        print("Please insert an Ender Chest into slot 1")
+        while turtle.getItemCount(1)==0 do
+            turtle.select(1)
+            sleep(1)
+        end
+    end
+    if turtle.getItemCount(2)>0 then
+        print("Mining Well OK")
+    else
+        print("Please insert Mining Well into slot 2")
+        while turtle.getItemCount(2)==0 do
+            turtle.select(2)
+            sleep(1)
+        end
+    end
+    if turtle.getItemCount(3)>0 then
+        print("Charge Station OK")
+    else
+        turtle.select(3)
+        print("Please insert Advanced Charge Station (or higher) into slot 3")
+        while turtle.getItemCount(3)==0 do
+            sleep(1)
+        end
+    end
+    if turtle.getFuelLevel()<reserveFuelLevel then
+        if turtle.getItemCount(16)>0 then
+            print("Fuel Level OK")
+        else
+            turtle.select(16)
+            print("Please insert fuel in slot 16")
+            while turtle.getItemCount(16)==0 do
+                sleep(1)
+            end
+        end
+    end
+
+end
+
+function waitForPartner()
+    if debug==true then
+        print("In waitForPartner")
+    end
+	rednet.open("right")
+	print("Waiting to pair with partner")
+	rednet.broadcast()
+	local id, msg, distance
+	while id==nil or id==myID do
+	    id, msg, distance = rednet.receive()
+	end
+	rednet.broadcast()
+	print("Partner Found")
+	if debug==true then
+	    print(id)
+	end
+	partnerID=id
+end
+
+function sendMessageToPartner(message)
+    if debug==true then
+        print("Sending Message " .. message)
+    end
+	rednet.send(partnerID,message)
+end
+
+function waitForMessageFromPartner(message)
+    if debug==true then
+        print("Waiting for message " .. message)
+    end
+    local id, msg, distance
+    while id==nil or id==myID or id ~= partnerID do
+	    id, msg, distance = rednet.receive()
+	end
+    if msg~=message then
+        print("ERROR - Unexpected Partner Message")
+        print("Expected:" .. message)
+        print("Received: .. msg")
+        shell.exit()
+    end
+end
+
+function moveForward()
+    if debug==true then
+        print("trying to move forward")
+    end
+    while turtle.detect() do
+        turtle.dig()
+        sleep(digDelay)
+    end
+    while turtle.forward()==false do
+        turtle.dig()
+	    sleep(digDelay)
+	    turtle.attack()
+	end
+end
+
+function moveUp()
+    if debug==true then
+        print("trying to move up")
+    end
+    while turtle.detectUp() do
+        turtle.digUp()
+        sleep(digDelay)
+    end
+    while turtle.up()==false do
+        turtle.digUp()
+	    sleep(digDelay)
+	    turtle.attackUp()
+	end
+end
+
+function topOff()
+    if turtle.getFuelLevel()<reserveFuelLevel or partnerNeedsFuel()==true then
+        sendMessageToPartner("powerdown")
+        waitForMessageFromPartner("powerdown")
+        sendMessageToPartner("backward")
+        waitForMessageFromPartner("backward")
+        turtle.turnLeft()
+        turtle.turnLeft()
+        placeCharge()
+        sendMessageToPartner("refuel")
+        waitForMessageFromPartner("charged")
+        while turtle.getFuelLevel() < chargeLevel do
+            sleep(1)
+            if debug==true then
+                print(turtle.getFuelLevel())
+            end
+        end
+        digCharge()
+        turtle.turnLeft()
+        turtle.turnLeft()
+        sendMessageToPartner("forward")
+        waitForMessageFromPartner("forward")
+        sendMessageToPartner("powerup")
+        waitForMessageFromPartner("powerup")
+    end
+end
+
+function partnerNeedsFuel()
+    sendMessageToPartner("needfuel")
+    local id, msg, distance
+    while id==nil or id==myID or id ~= partnerID do
+        id, msg, distance = rednet.receive()
+    end
+    if msg=="yes" then
+        return true
+    elseif msg=="no" then
+        return false
+    else
+        print("ERROR - Unexpected Partner Message")
+        print("Received: .. msg")
+        shell.exit()
+    end
+end
+
+function placeCharge()
+    turtle.select(3)
+    turtle.place()
+end
+
+function digCharge()
+    turtle.select(3)
+    turtle.dig()
+end
+
+function placeChest()
+    turtle.select(1)
+    while turtle.placeDown()==false do
+        turtle.attackDown()
+        turtle.digDown()
+        sleep(digDelay)
+    end
+end
+
+function digChest()
+    turtle.select(1)
+    if turtle.getItemCount(1) > 0 then
+        turtle.dropDown()
+    end
+    turtle.digDown()
+end
+
+function placeMiningWell()
+    turtle.select(2)
+    while turtle.placeDown()==false do
+        turtle.digDown()
+        turtle.attackDown()
+        sleep(digDelay)
+    end
+end
+
+function digMiningWell()
+    turtle.select(2)
+    if turtle.getItemCount(2) > 0 then
+        turtle.drop()
+    end
+    turtle.digDown()
+end
+
+function emptyInventory()
+    --for all inventory spots except fuel spot 16
+    for i=1,15 do
+        if turtle.getItemCount(i)>0 then
+            if i~=3 then
+                turtle.select(i)
+                turtle.dropDown()
+            end
+        end
+    end
+end
+
+--check to make sure it has all the items it needs
+checkStatus()
+
+--initial refuel
+turtle.select(16)
+turtle.refuel(1)
+turtle.select(1)
+
+--wait to find partner
+waitForPartner()
+
+--main loop
+while true do
+    topOff()
+    placeMiningWell()
+    moveUp()
+    placeChest()
+    emptyInventory()
+    sendMessageToPartner("powerdown")
+    waitForMessageFromPartner("powerdown")
+    sleep(miningTime)
+    sendMessageToPartner("powerup")
+    waitForMessageFromPartner("powerup")
+    digChest()
+    turtle.down()
+    digMiningWell()
+    moveForward()
+    sendMessageToPartner("forward")
+    waitForMessageFromPartner("forward")
+end

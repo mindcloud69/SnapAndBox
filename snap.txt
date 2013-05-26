@@ -1,0 +1,151 @@
+local partnerID=0
+local myID=os.getComputerID()
+local debug=false
+local reserveFuelLevel=10
+local chargeLevel=500
+
+function needFuel()
+    if turtle.getFuelLevel()<reserveFuelLevel then
+        sendMessageToPartner("yes")
+    else
+        sendMessageToPartner("no")
+    end
+end
+
+function refuel()
+    while turtle.getFuelLevel()<chargeLevel do
+        sleep(1)
+        if debug==true then
+            print(turtle.getFuelLevel())
+        end
+    end
+    sendMessageToPartner("charged")
+end
+
+function checkStatus()
+	if turtle.getItemCount(1)>0 then
+		print("Energy Cell OK")
+	else
+		print("Please insert Locked Energy Tesseract or Redstone Energy Cell into slot 1")
+		while turtle.getItemCount(1)==0 do
+			turtle.select(1)
+			sleep(1)
+		end
+	end
+	if turtle.getFuelLevel()<reserveFuelLevel then
+        if turtle.getItemCount(16)>0 then
+            print("Fuel Level OK")
+        else
+            turtle.select(16)
+            print("Please insert fuel into slot 16")
+            while turtle.getItemCount(16)==0 do
+                sleep(1)
+            end
+        end
+    end
+end
+
+function waitForPartner()
+	rednet.open("right")
+	print("Waiting to pair with partner")
+	rednet.broadcast()
+	local id, msg, distance
+	while id==nil or id==myID do
+	    id, msg, distance = rednet.receive()
+	end
+	rednet.broadcast()
+	print("Partner Found")
+	if debug==true then
+            print(id)
+        end
+	partnerID=id
+end
+
+function sendMessageToPartner(message)
+    if debug==true then
+        print("Sending Message" .. message)
+    end
+	rednet.send(partnerID,message)
+end
+
+function forward()
+    while turtle.forward()==false do
+        print("Problem Moving Forward")
+    end
+    sendMessageToPartner("forward")
+end
+
+function powerUp()
+	turtle.select(1)
+	turtle.digDown()
+    sendMessageToPartner("powerup")
+end
+
+function powerDown()
+	turtle.select(1)
+	while turtle.placeDown()==false do
+            print("Problem Moving Down")
+	end
+    sendMessageToPartner("powerdown")
+end
+
+function backward()
+    turtle.turnLeft()
+    turtle.turnLeft()
+    while turtle.forward()==false do
+        print("Problem Moving Forward")
+    end
+    turtle.turnLeft()
+    turtle.turnLeft()
+    sendMessageToPartner("backward")
+end
+
+function attack()
+    turtle.attack()
+    sendMessageToPartner("attack")
+end
+
+function waitForMessageFromPartner()
+    if debug==true then
+        print("Waiting for message")
+    end
+    local id, msg, distance
+    while id==nil or id==myID or id ~= partnerID do
+	    id, msg, distance = rednet.receive()
+	end
+    if msg=="powerdown" then
+        powerDown()
+    elseif msg=="powerup" then
+        powerUp()
+    elseif msg=="forward" then
+        forward()
+    elseif msg=="backward" then
+        backward()
+    elseif msg=="attack" then
+        attack()
+    elseif msg=="refuel" then
+        refuel()
+    elseif msg=="needfuel" then
+        needFuel()
+    else
+        if debug==true then
+            print("ERROR - Unknown Partner Message")
+            print("Received: .. msg")
+        end
+    end
+end
+
+--check to make sure it has all the items it needs
+checkStatus()
+
+--initial refuel
+turtle.select(16)
+turtle.refuel(1)
+turtle.select(1)
+
+--wait to find partner
+waitForPartner()
+
+while true do
+    waitForMessageFromPartner()
+end
