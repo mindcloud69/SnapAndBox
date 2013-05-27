@@ -46,7 +46,6 @@ function checkStatus()
 end
 
 function waitForPartner()
-	rednet.open("right")
 	print("Waiting to pair with partner")
 	rednet.broadcast()
 	local id, msg, distance
@@ -59,6 +58,9 @@ function waitForPartner()
             print(id)
         end
 	partnerID=id
+    local file=fs.open("SnapBoxPartnerID","w")
+    file.write(partnerID)
+    file.close()
 end
 
 function sendMessageToPartner(message)
@@ -83,8 +85,8 @@ end
 
 function powerDown()
 	turtle.select(1)
-	while turtle.placeDown()==false do
-            print("Problem Moving Down")
+	while turtle.placeDown()==false and turtle.getItemCount(1)>0 do
+            print("Problem placing power Down")
 	end
     sendMessageToPartner("powerdown")
 end
@@ -135,16 +137,41 @@ function waitForMessageFromPartner()
     end
 end
 
+function checkResume()
+    local file=fs.open("SnapBoxPartnerID","r")
+    if file==nil then
+        return false
+    else
+        file.close()
+        return true
+    end
+end
+
+function loadPartner()
+    local file=fs.open("SnapBoxPartnerID","r")
+    if file~=nil then
+        partnerID=tonumber(file.readAll())
+        file.close()
+    else
+        print("Could not load PartnerID - Something went wrong - run ClearSettings - Giving Up")
+    end
+end
+
 --check to make sure it has all the items it needs
-checkStatus()
+rednet.open("right")
+if checkResume()==false then
+    checkStatus()
 
---initial refuel
-turtle.select(16)
-turtle.refuel(1)
-turtle.select(1)
+    --initial refuel
+    turtle.select(16)
+    turtle.refuel(1)
+    turtle.select(1)
 
---wait to find partner
-waitForPartner()
+    --wait to find partner
+    waitForPartner()
+else
+    loadPartner()
+end
 
 while true do
     waitForMessageFromPartner()

@@ -56,7 +56,6 @@ function waitForPartner()
     if debug==true then
         print("In waitForPartner")
     end
-	rednet.open("right")
 	print("Waiting to pair with partner")
 	rednet.broadcast()
 	local id, msg, distance
@@ -69,6 +68,9 @@ function waitForPartner()
 	    print(id)
 	end
 	partnerID=id
+	local file=fs.open("SnapBoxPartnerID","w")
+	file.write(partnerID)
+	file.close()
 end
 
 function sendMessageToPartner(message)
@@ -189,9 +191,6 @@ end
 
 function digChest()
     turtle.select(1)
-    if turtle.getItemCount(1) > 0 then
-        turtle.dropDown()
-    end
     turtle.digDown()
 end
 
@@ -217,40 +216,114 @@ function emptyInventory()
     for i=1,15 do
         if turtle.getItemCount(i)>0 then
             if i~=3 then
-                turtle.select(i)
-                turtle.dropDown()
+                while turtle.getItemCount(i)>0 do
+                    turtle.select(i)
+                    turtle.dropDown()
+                end
             end
         end
     end
 end
 
+function setNextStep(next)
+    print("in set next step"..next)
+    local file=fs.open("SnapBoxStepTracker","w")
+    file.write(next)
+    file.close()
+end
+
+function getNextStep()
+    local file=fs.open("SnapBoxStepTracker","r")
+    if file==nil then
+        setNextStep("placeminingwell")
+    end
+    file=fs.open("SnapBoxStepTracker","r")
+    if file~=nil then
+        local returnValue=file.readAll()
+        file.close()
+        return returnValue
+    end
+
+end
+
+function checkResume()
+    local file=fs.open("SnapBoxStepTracker","r")
+    if file==nil then
+        return false
+    else
+        file.close()
+        return true
+    end
+end
+
+function nextStep()
+    local nextStep=getNextStep()
+    if nextStep=="placeminingwell" then
+        placeMiningWell()
+        setNextStep("moveup")
+    elseif nextStep=="moveup" then
+        moveUp()
+        setNextStep("placechest")
+    elseif nextStep=="placechest" then
+        placeChest()
+        setNextStep("emptyinventory")
+    elseif nextStep=="emptyinventory" then
+        emptyInventory()
+        setNextStep("partnerpowerdown")
+    elseif nextStep=="partnerpowerdown" then
+        sendMessageToPartner("powerdown")
+        waitForMessageFromPartner("powerdown")
+        sleep(miningTime)
+        setNextStep("partnerpowerup")
+    elseif nextStep=="partnerpowerup" then
+        sendMessageToPartner("powerup")
+        waitForMessageFromPartner("powerup")
+        setNextStep("digchest")
+    elseif nextStep=="digchest" then
+        digChest()
+        turtle.down()
+        setNextStep("digminingwell")
+    elseif nextStep=="digminingwell" then
+        digMiningWell()
+        setNextStep("moveforward")
+    elseif nextStep=="moveforward" then
+        moveForward()
+        setNextStep("partnerforward")
+    elseif nextStep=="partnerforward" then
+        sendMessageToPartner("forward")
+        waitForMessageFromPartner("forward")
+        setNextStep("placeminingwell")
+    else
+        print("Unknown Step - Something Went Wrong.")
+        shell.exit()
+    end
+end
+
+function loadPartner()
+    local file=fs.open("SnapBoxPartnerID","r")
+    if file~=nil then
+        partnerID=tonumber(file.readAll())
+        file.close()
+    else
+        print("Could not load PartnerID - Something went wrong - run ClearSettings - Giving Up")
+    end
+end
+
 --check to make sure it has all the items it needs
-checkStatus()
-
---initial refuel
-turtle.select(16)
-turtle.refuel(1)
-turtle.select(1)
-
---wait to find partner
-waitForPartner()
+rednet.open("right")
+if checkResume()==false then
+    checkStatus()
+    --initial refuel
+    turtle.select(16)
+    turtle.refuel(1)
+    turtle.select(1)
+    --wait to find partner
+    waitForPartner()
+else
+    loadPartner()
+end
 
 --main loop
 while true do
-    topOff()
-    placeMiningWell()
-    moveUp()
-    placeChest()
-    emptyInventory()
-    sendMessageToPartner("powerdown")
-    waitForMessageFromPartner("powerdown")
-    sleep(miningTime)
-    sendMessageToPartner("powerup")
-    waitForMessageFromPartner("powerup")
-    digChest()
-    turtle.down()
-    digMiningWell()
-    moveForward()
-    sendMessageToPartner("forward")
-    waitForMessageFromPartner("forward")
+    nextStep()
 end
