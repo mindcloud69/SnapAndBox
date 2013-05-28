@@ -1,5 +1,7 @@
 local debug=true
 local currentVersion="1"
+local boxPastebin="VTqiayCe"
+local snapPastebin="YzLLYEzm"
 
 function toggleUpdates()
     if debug==true then
@@ -126,16 +128,42 @@ end
 
 function resumeLastChoice()
     local choice=checkForLastChoice()
-    if choice=="SnapAndBox" then
-
+    if choice=="Box" then
+        runBox()
+    elseif choice=="Snap" then
+        runSnap()
     end
-
 end
 
 function setLastChoice(choice)
     local file = fs.open("lastChoice","w")
     file.write(choice)
     file.close()
+end
+
+function runBox()
+    if doWeCheckUpdates()==true then
+        downloadFile("box",boxPastebin)
+    end
+    if fs.exists("box")==false then
+        downloadFile("box",boxPastebin)
+    end
+    shell.run("box")
+end
+
+function runSnap()
+    if doWeCheckUpdates()==true then
+        downloadFile("snap",snapPastebin)
+    end
+    if fs.exists("snap")==false then
+        downloadFile("snap",snapPastebin)
+    end
+    shell.run("snap")
+end
+
+function downloadFile(filename,pastebin)
+    fs.delete(filename)
+    shell.run("rom/programs/http/pastebin", "get "..pastebin.." "..filename)
 end
 
 function mainMenu()
@@ -147,16 +175,19 @@ function mainMenu()
         print("In mainMenu")
     end
     print [[------Psyestorm's Turtle Launcher------
-    1. Snap and Box - Mining
-    2. Slider - Building
+    1. Box - Mining Turtle
+    2. Snap - Engineering Turtle
     0. Toggle Automatic Updates]]
 
     local choice=nil
     while choice==nil do
         choice=io.read()
         if choice=="1" then
-            setLastChoice("SnapAndBox")
+            setLastChoice("Box")
+            runBox()
         elseif choice=="2" then
+            setLastChoice("Snap")
+            runSnap()
         elseif choice=="0" then
             toggleUpdates()
         else

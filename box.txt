@@ -3,13 +3,18 @@
 --resuming with refuel
 
 local settings={}
-settings["miningTime"]=4
+settings["miningTime"]=5
 settings["partnerID"]=0
 settings["myID"]=os.getComputerID()
 settings["digDelay"]=1
 settings["reserveFuelLevel"]=10
 settings["chargeLevel"]=500
 settings["debug"]=false
+settings["blocksToTravel"]=0
+settings["blocksTraveled"]=0
+settings["rowsToMine"]=0
+settings["rowsTraveled"]=0
+settings["blocksMined"]=0
 
 function loadSettings()
    local file = fs.open("SnapBoxSettings","r")
@@ -144,28 +149,9 @@ end
 
 function topOff()
     if turtle.getFuelLevel()<settings["reserveFuelLevel"] or partnerNeedsFuel()==true then
-        sendMessageToPartner("powerdown")
-        waitForMessageFromPartner("powerdown")
-        sendMessageToPartner("backward")
-        waitForMessageFromPartner("backward")
-        turtle.turnLeft()
-        turtle.turnLeft()
-        placeCharge()
-        sendMessageToPartner("refuel")
-        waitForMessageFromPartner("charged")
-        while turtle.getFuelLevel() < settings["chargeLevel"] do
-            sleep(1)
-            if settings["debug"]==true then
-                print(turtle.getFuelLevel())
-            end
-        end
-        digCharge()
-        turtle.turnLeft()
-        turtle.turnLeft()
-        sendMessageToPartner("forward")
-        waitForMessageFromPartner("forward")
-        sendMessageToPartner("powerup")
-        waitForMessageFromPartner("powerup")
+        setNextStep("chargepowerdown")
+    else
+        setNextStep("placeminingwell")
     end
 end
 
@@ -262,6 +248,19 @@ function getNextStep()
 
 end
 
+function incrementBlockCounter()
+    settings["blocksTraveled"]=settings["blocksTraveled"]+1
+    saveSettings()
+end
+
+function checkReturn()
+    if settings["blocksTraveled"]>settings["blocksToTravel"] and settings["blocksToTravel"]~=0 then
+        return true
+    else
+        return false
+    end
+end
+
 function checkResume()
     local file=fs.open("SnapBoxStepTracker","r")
     if file==nil then
@@ -274,7 +273,69 @@ end
 
 function nextStep()
     local nextStep=getNextStep()
-    if nextStep=="placeminingwell" then
+    if nextStep=="topoff" then
+        topOff()
+    elseif nextStep=="chargepowerdown" then
+        sendMessageToPartner("powerdown")
+        waitForMessageFromPartner("powerdown")
+        setNextStep("chargepartnerleft1")
+    elseif nextStep=="chargepartnerleft1" then
+        sendMessageToPartner("left")
+        waitForMessageFromPartner("left")
+        setNextStep("chargepartnerleft2")
+    elseif nextStep=="chargepartnerleft2" then
+        sendMessageToPartner("left")
+        waitForMessageFromPartner("left")
+        setNextStep("chargepartnerforward")
+    elseif nextStep=="chargepartnerforward" then
+        sendMessageToPartner("forward")
+        waitForMessageFromPartner("forward")
+        setNextStep("chargepartnerleft3")
+    elseif nextStep=="chargepartnerleft3" then
+        sendMessageToPartner("left")
+        waitForMessageFromPartner("left")
+        setNextStep("chargepartnerleft4")
+    elseif nextStep=="chargepartnerleft4" then
+        sendMessageToPartner("left")
+        waitForMessageFromPartner("left")
+        setNextStep("chargeturnleft1")
+    elseif nextStep=="chargeturnleft1" then
+        turtle.turnLeft()
+        setNextStep("chargeturnleft2")
+    elseif nextStep=="chargeturnleft2" then
+        turtle.turnLeft()
+        setNextStep("chargeplacecharge")
+    elseif nextStep=="chargeplacecharge" then
+        placeCharge()
+        setNextStep("chargewaitforrefuel")
+    elseif nextStep=="chargewaitforrefuel" then
+        sendMessageToPartner("refuel")
+        waitForMessageFromPartner("charged")
+        while turtle.getFuelLevel() < settings["chargeLevel"] do
+            sleep(1)
+            if settings["debug"]==true then
+                print(turtle.getFuelLevel())
+            end
+        end
+        setNextStep("chargedigcharge")
+    elseif nextStep=="chargedigcharge" then
+        digCharge()
+        setNextStep("chargeturnleft3")
+    elseif nextStep=="chargeturnleft3" then
+        turtle.turnLeft()
+        setNextStep("chargeturnleft4")
+    elseif nextStep=="chargeturnleft4" then
+        turtle.turnLeft()
+        setNextStep("chargeforward")
+    elseif nextStep=="chargeforward" then
+        sendMessageToPartner("forward")
+        waitForMessageFromPartner("forward")
+        setNextStep("chargepowerup")
+    elseif nextStep=="chargepowerup" then
+        sendMessageToPartner("powerup")
+        waitForMessageFromPartner("powerup")
+        setNextStep("placeminingwell")
+    elseif nextStep=="placeminingwell" then
         placeMiningWell()
         setNextStep("placechest")
     elseif nextStep=="placechest" then
@@ -283,6 +344,7 @@ function nextStep()
     elseif nextStep=="partnerpowerdown" then
         sendMessageToPartner("powerdown")
         waitForMessageFromPartner("powerdown")
+        incrementBlockCounter()
         sleep(settings["miningTime"])
         setNextStep("partnerpowerup")
     elseif nextStep=="partnerpowerup" then
@@ -305,7 +367,16 @@ function nextStep()
     elseif nextStep=="partnerforward" then
         sendMessageToPartner("forward")
         waitForMessageFromPartner("forward")
-        setNextStep("placeminingwell")
+        setNextStep("checkreturn")
+    elseif nextStep=="checkreturn" then
+        if checkReturn()==true then
+            setNextStep("gohome")
+        else
+            setNextStep("topoff")
+        end
+    elseif nextStep=="gohome" then
+        shell.run("clearsettings")
+        os.shutdown()
     else
         print("Unknown Step - Something Went Wrong. Giving Up")
         shell.exit()
@@ -316,12 +387,15 @@ end
 rednet.open("right")
 if checkResume()==false then
     checkStatus()
+    print("Enter the number of blocks to travel before coming home (0 for never come home)")
+    settings["blocksToTravel"]=io.read()
     --initial refuel
     turtle.select(16)
     turtle.refuel(1)
     turtle.select(1)
     --wait to find partner
     waitForPartner()
+
 else
     loadSettings()
 end

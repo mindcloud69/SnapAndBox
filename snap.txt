@@ -1,11 +1,25 @@
-local partnerID=0
-local myID=os.getComputerID()
-local debug=false
-local reserveFuelLevel=10
-local chargeLevel=500
+local settings={}
+settings["partnerID"]=0
+settings["myID"]=os.getComputerID()
+settings["debug"]=false
+settings["reserveFuelLevel"]=10
+settings["chargeLevel"]=500
+
+function loadSettings()
+   local file = fs.open("SnapBoxSettings","r")
+   local data = file.readAll()
+   file.close()
+   settings=textutils.unserialize(data)
+end
+
+function saveSettings()
+    local file = fs.open("SnapBoxSettings","w")
+    file.write(textutils.serialize(settings))
+    file.close()
+end
 
 function needFuel()
-    if turtle.getFuelLevel()<reserveFuelLevel then
+    if turtle.getFuelLevel()<settings["reserveFuelLevel"] then
         sendMessageToPartner("yes")
     else
         sendMessageToPartner("no")
@@ -13,9 +27,9 @@ function needFuel()
 end
 
 function refuel()
-    while turtle.getFuelLevel()<chargeLevel do
+    while turtle.getFuelLevel()<settings["chargeLevel"] do
         sleep(1)
-        if debug==true then
+        if settings["debug"]==true then
             print(turtle.getFuelLevel())
         end
     end
@@ -32,7 +46,7 @@ function checkStatus()
 			sleep(1)
 		end
 	end
-	if turtle.getFuelLevel()<reserveFuelLevel then
+	if turtle.getFuelLevel()<settings["reserveFuelLevel"] then
         if turtle.getItemCount(16)>0 then
             print("Fuel Level OK")
         else
@@ -49,25 +63,23 @@ function waitForPartner()
 	print("Waiting to pair with partner")
 	rednet.broadcast()
 	local id, msg, distance
-	while id==nil or id==myID do
+	while id==nil or id==settings["myID"] do
 	    id, msg, distance = rednet.receive()
 	end
 	rednet.broadcast()
 	print("Partner Found")
-	if debug==true then
+	if settings["debug"]==true then
             print(id)
         end
-	partnerID=id
-    local file=fs.open("SnapBoxPartnerID","w")
-    file.write(partnerID)
-    file.close()
+	settings["partnerID"]=id
+    saveSettings()
 end
 
 function sendMessageToPartner(message)
-    if debug==true then
+    if settings["debug"]==true then
         print("Sending Message" .. message)
     end
-	rednet.send(partnerID,message)
+	rednet.send(settings["partnerID"],message)
 end
 
 function forward()
@@ -108,11 +120,11 @@ function attack()
 end
 
 function waitForMessageFromPartner()
-    if debug==true then
+    if settings["debug"]==true then
         print("Waiting for message")
     end
     local id, msg, distance
-    while id==nil or id==myID or id ~= partnerID do
+    while id==nil or id==settings["myID"] or id ~= settings["partnerID"] do
 	    id, msg, distance = rednet.receive()
 	end
     if msg=="powerdown" then
@@ -121,6 +133,9 @@ function waitForMessageFromPartner()
         powerUp()
     elseif msg=="forward" then
         forward()
+    elseif msg=="left" then
+        turtle.turnLeft()
+        sendMessageToPartner("left")
     elseif msg=="backward" then
         backward()
     elseif msg=="attack" then
@@ -130,7 +145,7 @@ function waitForMessageFromPartner()
     elseif msg=="needfuel" then
         needFuel()
     else
-        if debug==true then
+        if settings["debug"]==true then
             print("ERROR - Unknown Partner Message")
             print("Received: .. msg")
         end
@@ -147,16 +162,6 @@ function checkResume()
     end
 end
 
-function loadPartner()
-    local file=fs.open("SnapBoxPartnerID","r")
-    if file~=nil then
-        partnerID=tonumber(file.readAll())
-        file.close()
-    else
-        print("Could not load PartnerID - Something went wrong - run ClearSettings - Giving Up")
-    end
-end
-
 --check to make sure it has all the items it needs
 rednet.open("right")
 if checkResume()==false then
@@ -170,7 +175,7 @@ if checkResume()==false then
     --wait to find partner
     waitForPartner()
 else
-    loadPartner()
+    loadSettings()
 end
 
 while true do
