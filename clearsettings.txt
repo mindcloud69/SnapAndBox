@@ -1,1 +1,3 @@
 fs.delete("SnapBoxSettings")
+fs.delete("SnapBoxStepTracker")
+fs.delete("lastChoice")

@@ -140,6 +140,10 @@ function waitForMessageFromPartner()
         backward()
     elseif msg=="attack" then
         attack()
+    elseif msg=="clearsettings" then
+        shell.run("clearsettings")
+    elseif msg=="shutdown" then
+        os.shutdown()
     elseif msg=="refuel" then
         refuel()
     elseif msg=="needfuel" then
@@ -153,7 +157,7 @@ function waitForMessageFromPartner()
 end
 
 function checkResume()
-    local file=fs.open("SnapBoxPartnerID","r")
+    local file=fs.open("SnapBoxSettings","r")
     if file==nil then
         return false
     else

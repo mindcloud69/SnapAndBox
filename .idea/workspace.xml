@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="610980b3-e1c7-43c3-81d5-18623594cab6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/clearsettings.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/box.txt" afterPath="$PROJECT_DIR$/box.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/clearsettings.txt" afterPath="$PROJECT_DIR$/clearsettings.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/launcher.txt" afterPath="$PROJECT_DIR$/launcher.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/snap.txt" afterPath="$PROJECT_DIR$/snap.txt" />
     </list>
@@ -28,7 +28,7 @@
       <file leaf-file-name="box.txt" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/box.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="377" column="8" selection-start="10191" selection-end="10217" vertical-scroll-proportion="0.4755245">
+            <state line="41" column="57" selection-start="1013" selection-end="1013" vertical-scroll-proportion="0.43510056">
               <folding />
             </state>
           </provider>
@@ -37,7 +37,7 @@
       <file leaf-file-name="clearsettings.txt" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/clearsettings.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="28" vertical-scroll-proportion="0.0">
+            <state line="0" column="0" selection-start="0" selection-end="84" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -46,7 +46,7 @@
       <file leaf-file-name="snap.txt" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/snap.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="113" column="34" selection-start="0" selection-end="4145" vertical-scroll-proportion="-25.44">
+            <state line="145" column="21" selection-start="3499" selection-end="3499" vertical-scroll-proportion="-17.0">
               <folding />
             </state>
           </provider>
@@ -55,7 +55,7 @@
       <file leaf-file-name="launcher.txt" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/launcher.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="179" column="40" selection-start="4379" selection-end="4379" vertical-scroll-proportion="0.0">
+            <state line="144" column="50" selection-start="0" selection-end="5043" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -76,9 +76,9 @@
       <list>
         <option value="$PROJECT_DIR$/box.lua" />
         <option value="$PROJECT_DIR$/snap.lua" />
-        <option value="$PROJECT_DIR$/snap.txt" />
-        <option value="$PROJECT_DIR$/launcher.txt" />
         <option value="$PROJECT_DIR$/clearsettings.txt" />
+        <option value="$PROJECT_DIR$/launcher.txt" />
+        <option value="$PROJECT_DIR$/snap.txt" />
         <option value="$PROJECT_DIR$/box.txt" />
       </list>
     </option>
@@ -336,30 +336,30 @@
         <state line="122" column="34" selection-start="2707" selection-end="2707" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/clearsettings.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="28" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/launcher.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="179" column="40" selection-start="4379" selection-end="4379" vertical-scroll-proportion="0.0">
+        <state line="144" column="50" selection-start="0" selection-end="5043" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/snap.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="113" column="34" selection-start="0" selection-end="4145" vertical-scroll-proportion="-25.44">
+        <state line="145" column="21" selection-start="3499" selection-end="3499" vertical-scroll-proportion="-17.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/clearsettings.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="84" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/box.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="377" column="8" selection-start="10191" selection-end="10217" vertical-scroll-proportion="0.4755245">
+        <state line="41" column="57" selection-start="1013" selection-end="1013" vertical-scroll-proportion="0.43510056">
           <folding />
         </state>
       </provider>

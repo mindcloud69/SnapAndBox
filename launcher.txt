@@ -2,6 +2,7 @@ local debug=true
 local currentVersion="1"
 local boxPastebin="VTqiayCe"
 local snapPastebin="YzLLYEzm"
+local clearSettingsPastebin="aa5cBF43"
 
 function toggleUpdates()
     if debug==true then
@@ -144,9 +145,11 @@ end
 function runBox()
     if doWeCheckUpdates()==true then
         downloadFile("box",boxPastebin)
+        downloadFile("clearsettings",clearSettingsPastebin)
     end
     if fs.exists("box")==false then
         downloadFile("box",boxPastebin)
+        downloadFile("clearsettings",clearSettingsPastebin)
     end
     shell.run("box")
 end

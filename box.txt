@@ -2,6 +2,7 @@
 --travel number of blocks and come back - z pattern
 --resuming with refuel
 
+local stop=false
 local settings={}
 settings["miningTime"]=5
 settings["partnerID"]=0
@@ -15,6 +16,7 @@ settings["blocksTraveled"]=0
 settings["rowsToMine"]=0
 settings["rowsTraveled"]=0
 settings["blocksMined"]=0
+local nextStep=nil
 
 function loadSettings()
    local file = fs.open("SnapBoxSettings","r")
@@ -228,22 +230,23 @@ function emptyInventory()
 end
 
 function setNextStep(next)
-    print("in set next step"..next)
+    print("in set next step "..next)
     local file=fs.open("SnapBoxStepTracker","w")
     file.write(next)
     file.close()
+    nextStep=next
 end
 
 function getNextStep()
     local file=fs.open("SnapBoxStepTracker","r")
     if file==nil then
-        setNextStep("placeminingwell")
+        setNextStep("topoff")
     end
     file=fs.open("SnapBoxStepTracker","r")
     if file~=nil then
         local returnValue=file.readAll()
         file.close()
-        return returnValue
+        setNextStep(returnValue)
     end
 
 end
@@ -254,7 +257,7 @@ function incrementBlockCounter()
 end
 
 function checkReturn()
-    if settings["blocksTraveled"]>settings["blocksToTravel"] and settings["blocksToTravel"]~=0 then
+    if settings["blocksTraveled"]>=settings["blocksToTravel"] and settings["blocksToTravel"]~=0 then
         return true
     else
         return false
@@ -271,8 +274,7 @@ function checkResume()
     end
 end
 
-function nextStep()
-    local nextStep=getNextStep()
+function doNextStep()
     if nextStep=="topoff" then
         topOff()
     elseif nextStep=="chargepowerdown" then
@@ -370,16 +372,16 @@ function nextStep()
         setNextStep("checkreturn")
     elseif nextStep=="checkreturn" then
         if checkReturn()==true then
+            print("going home"..settings["blocksToTravel"])
             setNextStep("gohome")
         else
             setNextStep("topoff")
         end
     elseif nextStep=="gohome" then
         shell.run("clearsettings")
-        os.shutdown()
+        stop=true
     else
-        print("Unknown Step - Something Went Wrong. Giving Up")
-        shell.exit()
+        print("Unknown Step - Something Went Wrong. Giving Up "..nextStep)
     end
 end
 
@@ -388,19 +390,22 @@ rednet.open("right")
 if checkResume()==false then
     checkStatus()
     print("Enter the number of blocks to travel before coming home (0 for never come home)")
-    settings["blocksToTravel"]=io.read()
+    settings["blocksToTravel"]=tonumber(io.read())
     --initial refuel
     turtle.select(16)
     turtle.refuel(1)
     turtle.select(1)
     --wait to find partner
     waitForPartner()
-
+    nextStep="topoff"
 else
     loadSettings()
+    getNextStep()
+    --this sleep allows snap to wake up before box
+    sleep(5)
 end
 
 --main loop
-while true do
-    nextStep()
+while stop==false do
+    doNextStep()
 end
