@@ -1,13 +1,31 @@
-local miningTime=4
-local partnerID=0
-local myID=os.getComputerID()
-local digDelay=1
-local reserveFuelLevel=10
-local chargeLevel=500
-local debug=false
+--load settings
+--travel number of blocks and come back - z pattern
+--resuming with refuel
+
+local settings={}
+settings["miningTime"]=4
+settings["partnerID"]=0
+settings["myID"]=os.getComputerID()
+settings["digDelay"]=1
+settings["reserveFuelLevel"]=10
+settings["chargeLevel"]=500
+settings["debug"]=false
+
+function loadSettings()
+   local file = fs.open("SnapBoxSettings","r")
+   local data = file.readAll()
+   file.close()
+   settings=textutils.unserialize(data)
+end
+
+function saveSettings()
+    local file = fs.open("SnapBoxSettings","w")
+    file.write(textutils.serialize(settings))
+    file.close()
+end
 
 function checkStatus()
-    if debug==true then
+    if settings["debug"]==true then
         print("In checkStatus")
     end
 
@@ -38,7 +56,7 @@ function checkStatus()
             sleep(1)
         end
     end
-    if turtle.getFuelLevel()<reserveFuelLevel then
+    if turtle.getFuelLevel()<settings["reserveFuelLevel"] then
         if turtle.getItemCount(16)>0 then
             print("Fuel Level OK")
         else
@@ -53,39 +71,37 @@ function checkStatus()
 end
 
 function waitForPartner()
-    if debug==true then
+    if settings["debug"]==true then
         print("In waitForPartner")
     end
 	print("Waiting to pair with partner")
 	rednet.broadcast()
 	local id, msg, distance
-	while id==nil or id==myID do
+	while id==nil or id==settings["myID"] do
 	    id, msg, distance = rednet.receive()
 	end
 	rednet.broadcast()
 	print("Partner Found")
-	if debug==true then
+	if settings["debug"]==true then
 	    print(id)
 	end
-	partnerID=id
-	local file=fs.open("SnapBoxPartnerID","w")
-	file.write(partnerID)
-	file.close()
+	settings["partnerID"]=id
+    saveSettings()
 end
 
 function sendMessageToPartner(message)
-    if debug==true then
+    if settings["debug"]==true then
         print("Sending Message " .. message)
     end
-	rednet.send(partnerID,message)
+	rednet.send(settings["partnerID"],message)
 end
 
 function waitForMessageFromPartner(message)
-    if debug==true then
+    if settings["debug"]==true then
         print("Waiting for message " .. message)
     end
     local id, msg, distance
-    while id==nil or id==myID or id ~= partnerID do
+    while id==nil or id==settings["myID"] or id ~= settings["partnerID"] do
 	    id, msg, distance = rednet.receive()
 	end
     if msg~=message then
@@ -97,37 +113,37 @@ function waitForMessageFromPartner(message)
 end
 
 function moveForward()
-    if debug==true then
+    if settings["debug"]==true then
         print("trying to move forward")
     end
     while turtle.detect() do
         turtle.dig()
-        sleep(digDelay)
+        sleep(settings["digDelay"])
     end
     while turtle.forward()==false do
         turtle.dig()
-	    sleep(digDelay)
+	    sleep(settings["digDelay"])
 	    turtle.attack()
 	end
 end
 
 function moveUp()
-    if debug==true then
+    if settings["debug"]==true then
         print("trying to move up")
     end
     while turtle.detectUp() do
         turtle.digUp()
-        sleep(digDelay)
+        sleep(settings["digDelay"])
     end
     while turtle.up()==false do
         turtle.digUp()
-	    sleep(digDelay)
+	    sleep(settings["digDelay"])
 	    turtle.attackUp()
 	end
 end
 
 function topOff()
-    if turtle.getFuelLevel()<reserveFuelLevel or partnerNeedsFuel()==true then
+    if turtle.getFuelLevel()<settings["reserveFuelLevel"] or partnerNeedsFuel()==true then
         sendMessageToPartner("powerdown")
         waitForMessageFromPartner("powerdown")
         sendMessageToPartner("backward")
@@ -137,9 +153,9 @@ function topOff()
         placeCharge()
         sendMessageToPartner("refuel")
         waitForMessageFromPartner("charged")
-        while turtle.getFuelLevel() < chargeLevel do
+        while turtle.getFuelLevel() < settings["chargeLevel"] do
             sleep(1)
-            if debug==true then
+            if settings["debug"]==true then
                 print(turtle.getFuelLevel())
             end
         end
@@ -156,7 +172,7 @@ end
 function partnerNeedsFuel()
     sendMessageToPartner("needfuel")
     local id, msg, distance
-    while id==nil or id==myID or id ~= partnerID do
+    while id==nil or id==settings["myID"] or id ~= settings["partnerID"] do
         id, msg, distance = rednet.receive()
     end
     if msg=="yes" then
@@ -182,16 +198,16 @@ end
 
 function placeChest()
     turtle.select(1)
-    while turtle.placeDown()==false do
-        turtle.attackDown()
-        turtle.digDown()
-        sleep(digDelay)
+    while turtle.placeUp()==false do
+        turtle.attackUp()
+        turtle.digUp()
+        sleep(settings["digDelay"])
     end
 end
 
 function digChest()
     turtle.select(1)
-    turtle.digDown()
+    turtle.digUp()
 end
 
 function placeMiningWell()
@@ -199,7 +215,7 @@ function placeMiningWell()
     while turtle.placeDown()==false do
         turtle.digDown()
         turtle.attackDown()
-        sleep(digDelay)
+        sleep(settings["digDelay"])
     end
 end
 
@@ -218,7 +234,7 @@ function emptyInventory()
             if i~=3 then
                 while turtle.getItemCount(i)>0 do
                     turtle.select(i)
-                    turtle.dropDown()
+                    turtle.dropUp()
                 end
             end
         end
@@ -260,24 +276,21 @@ function nextStep()
     local nextStep=getNextStep()
     if nextStep=="placeminingwell" then
         placeMiningWell()
-        setNextStep("moveup")
-    elseif nextStep=="moveup" then
-        moveUp()
         setNextStep("placechest")
     elseif nextStep=="placechest" then
         placeChest()
-        setNextStep("emptyinventory")
-    elseif nextStep=="emptyinventory" then
-        emptyInventory()
         setNextStep("partnerpowerdown")
     elseif nextStep=="partnerpowerdown" then
         sendMessageToPartner("powerdown")
         waitForMessageFromPartner("powerdown")
-        sleep(miningTime)
+        sleep(settings["miningTime"])
         setNextStep("partnerpowerup")
     elseif nextStep=="partnerpowerup" then
         sendMessageToPartner("powerup")
         waitForMessageFromPartner("powerup")
+        setNextStep("emptyinventory")
+    elseif nextStep=="emptyinventory" then
+        emptyInventory()
         setNextStep("digchest")
     elseif nextStep=="digchest" then
         digChest()
@@ -294,18 +307,8 @@ function nextStep()
         waitForMessageFromPartner("forward")
         setNextStep("placeminingwell")
     else
-        print("Unknown Step - Something Went Wrong.")
+        print("Unknown Step - Something Went Wrong. Giving Up")
         shell.exit()
-    end
-end
-
-function loadPartner()
-    local file=fs.open("SnapBoxPartnerID","r")
-    if file~=nil then
-        partnerID=tonumber(file.readAll())
-        file.close()
-    else
-        print("Could not load PartnerID - Something went wrong - run ClearSettings - Giving Up")
     end
 end
 
@@ -320,7 +323,7 @@ if checkResume()==false then
     --wait to find partner
     waitForPartner()
 else
-    loadPartner()
+    loadSettings()
 end
 
 --main loop
