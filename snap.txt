@@ -1,9 +1,25 @@
 local settings={}
-settings["partnerID"]=0
-settings["myID"]=os.getComputerID()
 settings["debug"]=false
 settings["reserveFuelLevel"]=10
-settings["chargeLevel"]=500
+settings["nextStep"]=nil
+
+
+--CONSTANTS - Used with Redstone Signal Strength
+local cNone=0
+local cAcknowledged=1
+local cYes=2
+local cNo=3
+local cPowerDown=4
+local cPowerUp=5
+local cForward=6
+local cReadyCharge=7
+local cComplete=8
+local cGoHome=9
+local cReboot=11
+local cShutdown=12
+local cClearSettings=13
+local cNeedFuel=14
+local cPairing=15
 
 function loadSettings()
    local file = fs.open("SnapBoxSettings","r")
@@ -19,21 +35,12 @@ function saveSettings()
 end
 
 function needFuel()
-    if turtle.getFuelLevel()<settings["reserveFuelLevel"] then
-        sendMessageToPartner("yes")
+    local level=turtle.getFuelLevel()
+    if level=="unlimited" or level>settings["reserveFuelLevel"] then
+        sendMessageToPartner(cNo)
     else
-        sendMessageToPartner("no")
+        sendMessageToPartner(cYes)
     end
-end
-
-function refuel()
-    while turtle.getFuelLevel()<settings["chargeLevel"] do
-        sleep(1)
-        if settings["debug"]==true then
-            print(turtle.getFuelLevel())
-        end
-    end
-    sendMessageToPartner("charged")
 end
 
 function checkStatus()
@@ -43,116 +50,126 @@ function checkStatus()
 		print("Please insert Locked Energy Tesseract or Redstone Energy Cell into slot 1")
 		while turtle.getItemCount(1)==0 do
 			turtle.select(1)
-			sleep(1)
+			sleep(0.1)
 		end
 	end
-	if turtle.getFuelLevel()<settings["reserveFuelLevel"] then
+	if turtle.getFuelLevel()~="unlimited" and turtle.getFuelLevel()<settings["reserveFuelLevel"] then
         if turtle.getItemCount(16)>0 then
             print("Fuel Level OK")
         else
             turtle.select(16)
             print("Please insert fuel into slot 16")
             while turtle.getItemCount(16)==0 do
-                sleep(1)
+                sleep(0.1)
             end
         end
     end
 end
 
 function waitForPartner()
-	print("Waiting to pair with partner")
-	rednet.broadcast()
-	local id, msg, distance
-	while id==nil or id==settings["myID"] do
-	    id, msg, distance = rednet.receive()
-	end
-	rednet.broadcast()
-	print("Partner Found")
-	if settings["debug"]==true then
-            print(id)
-        end
-	settings["partnerID"]=id
-    saveSettings()
+	print("Waiting for Box")
+	sendMessageToPartner(cPairing)
+	local message=nil
+	while message~=cPairing do
+        event = os.pullEvent("redstone")
+        message=redstone.getAnalogInput("front")
+    end
+    sendMessageToPartner(cPairing)
+	print("Off we go")
 end
 
 function sendMessageToPartner(message)
-    if settings["debug"]==true then
-        print("Sending Message" .. message)
+    if debug==true then
+        print("Sent "..message)
     end
-	rednet.send(settings["partnerID"],message)
+    redstone.setAnalogOutput("front",message)
+    sleep(0.1)
+    redstone.setAnalogOutput("front",cNone)
 end
 
 function forward()
+    sendMessageToPartner(cForward)
     while turtle.forward()==false do
-        print("Problem Moving Forward")
+        sleep(0.1)
     end
-    sendMessageToPartner("forward")
+end
+
+function readyCharge()
+    sendMessageToPartner(cReadyCharge)
+    while turtle.back()==false do
+        sleep(0.1)
+    end
+    settings["nextStep"]="wait-forward"
+    saveSettings()
+    waitForward()
+end
+
+function waitForward()
+    sleep(2)
+    while turtle.detect()==true do
+        sleep(0.1)
+    end
+    sleep(2)
+    while turtle.forward()==false do
+        sleep(0.1)
+    end
+    settings["nextStep"]=nil
+    saveSettings()
+    sendMessageToPartner(cComplete)
 end
 
 function powerUp()
 	turtle.select(1)
 	turtle.digDown()
-    sendMessageToPartner("powerup")
+    sendMessageToPartner(cPowerUp)
 end
 
 function powerDown()
 	turtle.select(1)
 	while turtle.placeDown()==false and turtle.getItemCount(1)>0 do
-            print("Problem placing power Down")
+            sleep(0.1)
 	end
-    sendMessageToPartner("powerdown")
-end
-
-function backward()
-    turtle.turnLeft()
-    turtle.turnLeft()
-    while turtle.forward()==false do
-        print("Problem Moving Forward")
-    end
-    turtle.turnLeft()
-    turtle.turnLeft()
-    sendMessageToPartner("backward")
-end
-
-function attack()
-    turtle.attack()
-    sendMessageToPartner("attack")
+    sendMessageToPartner(cPowerDown)
 end
 
 function waitForMessageFromPartner()
     if settings["debug"]==true then
         print("Waiting for message")
     end
-    local id, msg, distance
-    while id==nil or id==settings["myID"] or id ~= settings["partnerID"] do
-	    id, msg, distance = rednet.receive()
-	end
-    if msg=="powerdown" then
-        powerDown()
-    elseif msg=="powerup" then
-        powerUp()
-    elseif msg=="forward" then
-        forward()
-    elseif msg=="left" then
+    os.pullEvent("redstone")
+
+    --check to see if Box has turned and moved
+    --for future versions
+    local msg=redstone.getAnalogInput("front")
+    local msgLeft=redstone.getAnalogInput("left")
+    local msgRight=redstone.getAnalogInput("right")
+
+    if msgLeft~=0 and msg==0 then
         turtle.turnLeft()
-        sendMessageToPartner("left")
-    elseif msg=="backward" then
-        backward()
-    elseif msg=="attack" then
-        attack()
-    elseif msg=="clearsettings" then
+        msg=msgLeft
+    end
+
+    if msgRight~=0 and msg==0 then
+        turtle.turnRight()
+        msg=msgRight
+    end
+
+    if msg==cPowerDown then
+        powerDown()
+    elseif msg==cPowerUp then
+        powerUp()
+    elseif msg==cForward then
+        forward()
+    elseif msg==cClearSettings then
         shell.run("clearsettings")
-    elseif msg=="shutdown" then
+    elseif msg==cShutdown then
         os.shutdown()
-    elseif msg=="refuel" then
-        refuel()
-    elseif msg=="needfuel" then
+    elseif msg==cReboot then
+        os.reboot()
+    elseif msg==cNeedFuel then
         needFuel()
-    else
-        if settings["debug"]==true then
-            print("ERROR - Unknown Partner Message")
-            print("Received: .. msg")
-        end
+    elseif msg==cReadyCharge then
+        readyCharge()
     end
 end
 
@@ -166,22 +183,32 @@ function checkResume()
     end
 end
 
---check to make sure it has all the items it needs
-rednet.open("right")
+
+-----MAIN PROGRAM
+term.clear()
+term.setCursorPos(1,1)
+
+--Check for a resume
 if checkResume()==false then
+    --Check to make sure it has all the items it needs
     checkStatus()
 
     --initial refuel
     turtle.select(16)
-    turtle.refuel(1)
+    turtle.refuel()
     turtle.select(1)
 
     --wait to find partner
     waitForPartner()
+    saveSettings()
 else
+    print("Resuming")
     loadSettings()
 end
 
 while true do
+    if settings["nextStep"]=="wait-forward" then
+        waitForward()
+    end
     waitForMessageFromPartner()
 end

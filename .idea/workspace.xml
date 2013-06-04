@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="610980b3-e1c7-43c3-81d5-18623594cab6" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/box.txt" afterPath="$PROJECT_DIR$/box.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/clearsettings.txt" afterPath="$PROJECT_DIR$/clearsettings.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/launcher.txt" afterPath="$PROJECT_DIR$/launcher.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/snap.txt" afterPath="$PROJECT_DIR$/snap.txt" />
     </list>
@@ -25,19 +25,10 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="box.txt" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="box.txt" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/box.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="41" column="57" selection-start="1013" selection-end="1013" vertical-scroll-proportion="0.43510056">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="clearsettings.txt" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/clearsettings.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="84" vertical-scroll-proportion="0.0">
+            <state line="36" column="36" selection-start="0" selection-end="9645" vertical-scroll-proportion="-6.12">
               <folding />
             </state>
           </provider>
@@ -46,16 +37,16 @@
       <file leaf-file-name="snap.txt" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/snap.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="145" column="21" selection-start="3499" selection-end="3499" vertical-scroll-proportion="-17.0">
+            <state line="14" column="37" selection-start="0" selection-end="4619" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="launcher.txt" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="launcher.txt" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/launcher.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="144" column="50" selection-start="0" selection-end="5043" vertical-scroll-proportion="0.0">
+            <state line="188" column="39" selection-start="0" selection-end="5289" vertical-scroll-proportion="3.4589596">
               <folding />
             </state>
           </provider>
@@ -77,6 +68,7 @@
         <option value="$PROJECT_DIR$/box.lua" />
         <option value="$PROJECT_DIR$/snap.lua" />
         <option value="$PROJECT_DIR$/clearsettings.txt" />
+        <option value="$PROJECT_DIR$/test.lua" />
         <option value="$PROJECT_DIR$/launcher.txt" />
         <option value="$PROJECT_DIR$/snap.txt" />
         <option value="$PROJECT_DIR$/box.txt" />
@@ -88,6 +80,22 @@
     <option name="y" value="-8" />
     <option name="width" value="1696" />
     <option name="height" value="1026" />
+  </component>
+  <component name="ProjectInspectionProfilesVisibleTreeState">
+    <entry key="Project Default">
+      <profile-state>
+        <expanded-state>
+          <State>
+            <id />
+          </State>
+        </expanded-state>
+        <selected-state>
+          <State>
+            <id>CSS</id>
+          </State>
+        </selected-state>
+      </profile-state>
+    </entry>
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -139,7 +147,11 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="options.splitter.main.proportions" value="0.3" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="options.lastSelected" value="preferences.pluginManager" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.searchVisible" value="true" />
   </component>
   <component name="RunManager">
     <configuration default="true" type="RSpecRunConfigurationType" factoryName="RSpec">
@@ -219,16 +231,16 @@
     <frame x="-8" y="-8" width="1696" height="1026" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32921347" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32921347" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25826192" sideWeight="0.6707865" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.26499388" sideWeight="0.552809" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.26499388" sideWeight="0.43932584" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32921347" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -293,6 +305,34 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/box.txt">
       <provider selected="true" editor-type-id="text-editor">
+        <state line="41" column="57" selection-start="1013" selection-end="1013" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/clearsettings.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="84" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/snap.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="145" column="21" selection-start="3499" selection-end="3499" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/launcher.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="144" column="50" selection-start="0" selection-end="5043" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/box.txt">
+      <provider selected="true" editor-type-id="text-editor">
         <state line="5" column="36" selection-start="134" selection-end="134" vertical-scroll-proportion="0.0">
           <folding />
         </state>
@@ -336,20 +376,6 @@
         <state line="122" column="34" selection-start="2707" selection-end="2707" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/launcher.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="144" column="50" selection-start="0" selection-end="5043" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/snap.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="145" column="21" selection-start="3499" selection-end="3499" vertical-scroll-proportion="-17.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/clearsettings.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="84" vertical-scroll-proportion="0.0">
@@ -359,7 +385,21 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/box.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="41" column="57" selection-start="1013" selection-end="1013" vertical-scroll-proportion="0.43510056">
+        <state line="36" column="36" selection-start="0" selection-end="9645" vertical-scroll-proportion="-6.12">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/snap.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="14" column="37" selection-start="0" selection-end="4619" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/launcher.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="188" column="39" selection-start="0" selection-end="5289" vertical-scroll-proportion="3.4589596">
           <folding />
         </state>
       </provider>

@@ -1,22 +1,38 @@
---load settings
 --travel number of blocks and come back - z pattern
---resuming with refuel
-
+--test
+--SETTINGS DEFAULTS
 local stop=false
 local settings={}
 settings["miningTime"]=5
-settings["partnerID"]=0
-settings["myID"]=os.getComputerID()
 settings["digDelay"]=1
 settings["reserveFuelLevel"]=10
-settings["chargeLevel"]=500
+settings["chargeTime"]=30
 settings["debug"]=false
 settings["blocksToTravel"]=0
 settings["blocksTraveled"]=0
-settings["rowsToMine"]=0
+settings["rowsToTravel"]=0
 settings["rowsTraveled"]=0
 settings["blocksMined"]=0
 local nextStep=nil
+local turning="left"
+
+--CONSTANTS
+local cNone=0
+local cAcknowledged=1
+local cYes=2
+local cNo=3
+local cPowerDown=4
+local cPowerUp=5
+local cForward=6
+local cReadyCharge=7
+local cComplete=8
+local cGoHome=9
+local cReboot=11
+local cShutdown=12
+local cClearSettings=13
+local cNeedFuel=14
+local cPairing=15
+
 
 function loadSettings()
    local file = fs.open("SnapBoxSettings","r")
@@ -32,17 +48,13 @@ function saveSettings()
 end
 
 function checkStatus()
-    if settings["debug"]==true then
-        print("In checkStatus")
-    end
-
     if turtle.getItemCount(1)>0 then
         print("Ender Chest OK")
     else
         print("Please insert an Ender Chest into slot 1")
         while turtle.getItemCount(1)==0 do
             turtle.select(1)
-            sleep(1)
+            sleep(0.1)
         end
     end
     if turtle.getItemCount(2)>0 then
@@ -51,78 +63,68 @@ function checkStatus()
         print("Please insert Mining Well into slot 2")
         while turtle.getItemCount(2)==0 do
             turtle.select(2)
-            sleep(1)
+            sleep(0.1)
         end
     end
-    if turtle.getItemCount(3)>0 then
-        print("Charge Station OK")
-    else
-        turtle.select(3)
-        print("Please insert Advanced Charge Station (or higher) into slot 3")
-        while turtle.getItemCount(3)==0 do
-            sleep(1)
+    if turtle.getFuelLevel()~="unlimited" then
+        if turtle.getItemCount(3)>0 then
+            print("Charge Station OK")
+        else
+            print("Please insert Advanced Charge Station (or higher) into slot 3")
+            while turtle.getItemCount(3)==0 do
+                turtle.select(3)
+                sleep(0.1)
+            end
         end
     end
-    if turtle.getFuelLevel()<settings["reserveFuelLevel"] then
+    if needsFuel() then
         if turtle.getItemCount(16)>0 then
             print("Fuel Level OK")
         else
-            turtle.select(16)
             print("Please insert fuel in slot 16")
             while turtle.getItemCount(16)==0 do
-                sleep(1)
+                turtle.select(16)
+                sleep(0.1)
             end
         end
     end
 
 end
 
-function waitForPartner()
-    if settings["debug"]==true then
-        print("In waitForPartner")
+function needsFuel()
+    local level=turtle.getFuelLevel()
+    if level=="unlimited" or level>settings["reserveFuelLevel"] then
+        return false
+    else
+        return true
     end
-	print("Waiting to pair with partner")
-	rednet.broadcast()
-	local id, msg, distance
-	while id==nil or id==settings["myID"] do
-	    id, msg, distance = rednet.receive()
-	end
-	rednet.broadcast()
-	print("Partner Found")
-	if settings["debug"]==true then
-	    print(id)
-	end
-	settings["partnerID"]=id
-    saveSettings()
+end
+
+function waitForPartner()
+	print("Waiting for Snap")
+	sendMessageToPartner(cPairing)
+    waitForMessageFromPartner(cPairing)
+    sendMessageToPartner(cPairing)
+	print("Off we go")
 end
 
 function sendMessageToPartner(message)
-    if settings["debug"]==true then
-        print("Sending Message " .. message)
-    end
-	rednet.send(settings["partnerID"],message)
+    print("sending "..message)
+    redstone.setAnalogOutput("back",message)
+    sleep(0.1)
+    redstone.setAnalogOutput("back",cNone)
 end
 
 function waitForMessageFromPartner(message)
-    if settings["debug"]==true then
-        print("Waiting for message " .. message)
-    end
-    local id, msg, distance
-    while id==nil or id==settings["myID"] or id ~= settings["partnerID"] do
-	    id, msg, distance = rednet.receive()
-	end
-    if msg~=message then
-        print("ERROR - Unexpected Partner Message")
-        print("Expected:" .. message)
-        print("Received: .. msg")
-        shell.exit()
+    print("waiting for "..message)
+    local input=nil
+    while input~=message do
+        event = os.pullEvent("redstone")
+        input=redstone.getAnalogInput("back")
     end
 end
 
 function moveForward()
-    if settings["debug"]==true then
-        print("trying to move forward")
-    end
     while turtle.detect() do
         turtle.dig()
         sleep(settings["digDelay"])
@@ -134,23 +136,9 @@ function moveForward()
 	end
 end
 
-function moveUp()
-    if settings["debug"]==true then
-        print("trying to move up")
-    end
-    while turtle.detectUp() do
-        turtle.digUp()
-        sleep(settings["digDelay"])
-    end
-    while turtle.up()==false do
-        turtle.digUp()
-	    sleep(settings["digDelay"])
-	    turtle.attackUp()
-	end
-end
-
 function topOff()
-    if turtle.getFuelLevel()<settings["reserveFuelLevel"] or partnerNeedsFuel()==true then
+    print("in topOff")
+    if needsFuel() or partnerNeedsFuel()==true then
         setNextStep("chargepowerdown")
     else
         setNextStep("placeminingwell")
@@ -158,25 +146,21 @@ function topOff()
 end
 
 function partnerNeedsFuel()
-    sendMessageToPartner("needfuel")
-    local id, msg, distance
-    while id==nil or id==settings["myID"] or id ~= settings["partnerID"] do
-        id, msg, distance = rednet.receive()
-    end
-    if msg=="yes" then
+    print("in partnerNeedsFuel")
+    sendMessageToPartner(cNeedFuel)
+    os.pullEvent("redstone")
+    if redstone.getAnalogInput("back")==cYes then
         return true
-    elseif msg=="no" then
-        return false
     else
-        print("ERROR - Unexpected Partner Message")
-        print("Received: .. msg")
-        shell.exit()
+        return false
     end
 end
 
 function placeCharge()
     turtle.select(3)
-    turtle.place()
+    while turtle.place()==false do
+        turtle.attack()
+    end
 end
 
 function digCharge()
@@ -195,6 +179,9 @@ end
 
 function digChest()
     turtle.select(1)
+    if turtle.getItemCount(1) > 0 then
+        turtle.drop()
+    end
     turtle.digUp()
 end
 
@@ -202,8 +189,8 @@ function placeMiningWell()
     turtle.select(2)
     while turtle.placeDown()==false do
         turtle.digDown()
-        turtle.attackDown()
         sleep(settings["digDelay"])
+        turtle.attackDown()
     end
 end
 
@@ -216,10 +203,10 @@ function digMiningWell()
 end
 
 function emptyInventory()
-    --for all inventory spots except fuel spot 16
-    for i=1,15 do
+    for i=1,16 do
         if turtle.getItemCount(i)>0 then
             if i~=3 then
+                --dont empty charge station slot
                 while turtle.getItemCount(i)>0 do
                     turtle.select(i)
                     turtle.dropUp()
@@ -230,7 +217,9 @@ function emptyInventory()
 end
 
 function setNextStep(next)
-    print("in set next step "..next)
+    if debug==true then
+        print("Set next step "..next)
+    end
     local file=fs.open("SnapBoxStepTracker","w")
     file.write(next)
     file.close()
@@ -241,14 +230,11 @@ function getNextStep()
     local file=fs.open("SnapBoxStepTracker","r")
     if file==nil then
         setNextStep("topoff")
-    end
-    file=fs.open("SnapBoxStepTracker","r")
-    if file~=nil then
+    else
         local returnValue=file.readAll()
         file.close()
         setNextStep(returnValue)
     end
-
 end
 
 function incrementBlockCounter()
@@ -275,31 +261,16 @@ function checkResume()
 end
 
 function doNextStep()
+--is there a better way to do this?
     if nextStep=="topoff" then
         topOff()
     elseif nextStep=="chargepowerdown" then
-        sendMessageToPartner("powerdown")
-        waitForMessageFromPartner("powerdown")
-        setNextStep("chargepartnerleft1")
-    elseif nextStep=="chargepartnerleft1" then
-        sendMessageToPartner("left")
-        waitForMessageFromPartner("left")
-        setNextStep("chargepartnerleft2")
-    elseif nextStep=="chargepartnerleft2" then
-        sendMessageToPartner("left")
-        waitForMessageFromPartner("left")
-        setNextStep("chargepartnerforward")
-    elseif nextStep=="chargepartnerforward" then
-        sendMessageToPartner("forward")
-        waitForMessageFromPartner("forward")
-        setNextStep("chargepartnerleft3")
-    elseif nextStep=="chargepartnerleft3" then
-        sendMessageToPartner("left")
-        waitForMessageFromPartner("left")
-        setNextStep("chargepartnerleft4")
-    elseif nextStep=="chargepartnerleft4" then
-        sendMessageToPartner("left")
-        waitForMessageFromPartner("left")
+        sendMessageToPartner(cPowerDown)
+        waitForMessageFromPartner(cPowerDown)
+        setNextStep("chargepartnerreadycharge")
+    elseif nextStep=="chargepartnerreadycharge" then
+        sendMessageToPartner(cReadyCharge)
+        waitForMessageFromPartner(cReadyCharge)
         setNextStep("chargeturnleft1")
     elseif nextStep=="chargeturnleft1" then
         turtle.turnLeft()
@@ -311,14 +282,7 @@ function doNextStep()
         placeCharge()
         setNextStep("chargewaitforrefuel")
     elseif nextStep=="chargewaitforrefuel" then
-        sendMessageToPartner("refuel")
-        waitForMessageFromPartner("charged")
-        while turtle.getFuelLevel() < settings["chargeLevel"] do
-            sleep(1)
-            if settings["debug"]==true then
-                print(turtle.getFuelLevel())
-            end
-        end
+        sleep(settings["chargeTime"])
         setNextStep("chargedigcharge")
     elseif nextStep=="chargedigcharge" then
         digCharge()
@@ -330,12 +294,11 @@ function doNextStep()
         turtle.turnLeft()
         setNextStep("chargeforward")
     elseif nextStep=="chargeforward" then
-        sendMessageToPartner("forward")
-        waitForMessageFromPartner("forward")
+        waitForMessageFromPartner(cComplete)
         setNextStep("chargepowerup")
     elseif nextStep=="chargepowerup" then
-        sendMessageToPartner("powerup")
-        waitForMessageFromPartner("powerup")
+        sendMessageToPartner(cPowerUp)
+        waitForMessageFromPartner(cPowerUp)
         setNextStep("placeminingwell")
     elseif nextStep=="placeminingwell" then
         placeMiningWell()
@@ -344,40 +307,41 @@ function doNextStep()
         placeChest()
         setNextStep("partnerpowerdown")
     elseif nextStep=="partnerpowerdown" then
-        sendMessageToPartner("powerdown")
-        waitForMessageFromPartner("powerdown")
+        sendMessageToPartner(cPowerDown)
+        waitForMessageFromPartner(cPowerDown)
         incrementBlockCounter()
-        sleep(settings["miningTime"])
         setNextStep("partnerpowerup")
+        sleep(settings["miningTime"])
     elseif nextStep=="partnerpowerup" then
-        sendMessageToPartner("powerup")
-        waitForMessageFromPartner("powerup")
+        sendMessageToPartner(cPowerUp)
+        waitForMessageFromPartner(cPowerUp)
         setNextStep("emptyinventory")
     elseif nextStep=="emptyinventory" then
         emptyInventory()
         setNextStep("digchest")
     elseif nextStep=="digchest" then
         digChest()
-        turtle.down()
         setNextStep("digminingwell")
     elseif nextStep=="digminingwell" then
         digMiningWell()
+        setNextStep("partnerforward")
+    elseif nextStep=="partnerforward" then
+        sendMessageToPartner(cForward)
+        waitForMessageFromPartner(cForward)
         setNextStep("moveforward")
     elseif nextStep=="moveforward" then
         moveForward()
-        setNextStep("partnerforward")
-    elseif nextStep=="partnerforward" then
-        sendMessageToPartner("forward")
-        waitForMessageFromPartner("forward")
         setNextStep("checkreturn")
     elseif nextStep=="checkreturn" then
         if checkReturn()==true then
-            print("going home"..settings["blocksToTravel"])
+            print("going home "..settings["blocksToTravel"])
             setNextStep("gohome")
         else
             setNextStep("topoff")
         end
     elseif nextStep=="gohome" then
+        sendMessageToPartner(cClearSettings)
+        sendMessageToPartner(cShutdown)
         shell.run("clearsettings")
         stop=true
     else
@@ -385,22 +349,33 @@ function doNextStep()
     end
 end
 
---check to make sure it has all the items it needs
-rednet.open("right")
+
+--------MAIN PROGRAM
+term.clear()
+term.setCursorPos(1,1)
+
 if checkResume()==false then
+    --check to make sure it has all the items it needs
     checkStatus()
-    print("Enter the number of blocks to travel before coming home (0 for never come home)")
-    settings["blocksToTravel"]=tonumber(io.read())
+
+    print("Enter the number of blocks to travel before stopping (0 or blank for never)")
+    local input=io.read()
+    if input~="" then
+        settings["blocksToTravel"]=tonumber(input)
+    end
+
     --initial refuel
     turtle.select(16)
-    turtle.refuel(1)
+    turtle.refuel()
     turtle.select(1)
+
     --wait to find partner
     waitForPartner()
     nextStep="topoff"
 else
     loadSettings()
     getNextStep()
+
     --this sleep allows snap to wake up before box
     sleep(5)
 end
@@ -408,4 +383,5 @@ end
 --main loop
 while stop==false do
     doNextStep()
+    sleep(0.2)
 end

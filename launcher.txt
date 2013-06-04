@@ -1,10 +1,13 @@
-local debug=true
+local debug=false
 local currentVersion="1"
 local boxPastebin="VTqiayCe"
 local snapPastebin="YzLLYEzm"
+local launcherVersionPastebin="ZD3HcUC8"
 local clearSettingsPastebin="aa5cBF43"
 
 function toggleUpdates()
+    term.clear()
+    term.setCursorPos(1,1)
     if debug==true then
         print("In toggleUpdates")
     end
@@ -12,7 +15,6 @@ function toggleUpdates()
     1. Yes
     2. No]]
     local choice=io.read()
-
     if choice=="1" then
         changeUpdates(true)
     else
@@ -88,7 +90,7 @@ function updateLauncher()
     fs.delete("startup")
     shell.run("rom/programs/http/pastebin", "get P65y2rkJ startup")
     fs.delete("currentLauncherVersion")
-    print("Update complete. Please restart the program. Closing in 5 seconds")
+    print("Update complete. Restarting in 5 seconds")
     sleep(5)
     os.reboot()
 end
@@ -97,8 +99,7 @@ function checkForUpdates()
     if doWeCheckUpdates()==true then
         print("Checking for updates..")
     --check for the newest version number
-        fs.delete("newestLauncherVersion")
-        shell.run("rom/programs/http/pastebin", "get ZD3HcUC8 newestLauncherVersion")
+        downloadFile("newestLauncherVersion",launcherVersionPastebin)
         local file = fs.open("newestLauncherVersion","r")
         local newest = file.readAll()
         file.close()
@@ -157,9 +158,11 @@ end
 function runSnap()
     if doWeCheckUpdates()==true then
         downloadFile("snap",snapPastebin)
+        downloadFile("clearsettings",clearSettingsPastebin)
     end
     if fs.exists("snap")==false then
         downloadFile("snap",snapPastebin)
+        downloadFile("clearsettings",clearSettingsPastebin)
     end
     shell.run("snap")
 end
@@ -172,15 +175,18 @@ end
 function mainMenu()
     if checkForLastChoice()~=nil then
         resumeLastChoice()
+        return true
     end
-
+    term.clear()
+    term.setCursorPos(1,1)
     if debug==true then
         print("In mainMenu")
     end
     print [[------Psyestorm's Turtle Launcher------
     1. Box - Mining Turtle
     2. Snap - Engineering Turtle
-    0. Toggle Automatic Updates]]
+    0. Toggle Automatic Updates
+    *Beta code - May break unexpectedly]]
 
     local choice=nil
     while choice==nil do
@@ -202,6 +208,7 @@ end
 
 --check if this is the first time the launcher has been run
 firstRun()
+--create version file
 createCurrentFile()
 checkForUpdates()
 mainMenu()
