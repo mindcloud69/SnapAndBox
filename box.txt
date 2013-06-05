@@ -1,5 +1,4 @@
---travel number of blocks and come back - z pattern
---test
+
 --SETTINGS DEFAULTS
 local stop=false
 local settings={}
@@ -14,11 +13,12 @@ settings["rowsToTravel"]=0
 settings["rowsTraveled"]=0
 settings["blocksMined"]=0
 local nextStep=nil
-local turning="left"
+settings["turning"]="left"
+settings["midTurn"]=false
 
 --CONSTANTS
 local cNone=0
-local cAcknowledged=1
+local cLeft=1
 local cYes=2
 local cNo=3
 local cPowerDown=4
@@ -27,6 +27,7 @@ local cForward=6
 local cReadyCharge=7
 local cComplete=8
 local cGoHome=9
+local cRight=10
 local cReboot=11
 local cShutdown=12
 local cClearSettings=13
@@ -109,14 +110,18 @@ function waitForPartner()
 end
 
 function sendMessageToPartner(message)
-    print("sending "..message)
+    if debug==true then
+        print("sending "..message)
+    end
     redstone.setAnalogOutput("back",message)
     sleep(0.1)
     redstone.setAnalogOutput("back",cNone)
 end
 
 function waitForMessageFromPartner(message)
-    print("waiting for "..message)
+    if debug==true then
+        print("waiting for "..message)
+    end
     local input=nil
     while input~=message do
         event = os.pullEvent("redstone")
@@ -137,16 +142,19 @@ function moveForward()
 end
 
 function topOff()
-    print("in topOff")
-    if needsFuel() or partnerNeedsFuel()==true then
-        setNextStep("chargepowerdown")
+    --make sure we're not turning soon
+    if settings["blocksTraveled"]<settings["blocksToTravel"] and settings["blocksTraveled"]>1 then
+        if needsFuel() or partnerNeedsFuel()==true then
+            setNextStep("chargepowerdown")
+        else
+            setNextStep("placeminingwell")
+        end
     else
         setNextStep("placeminingwell")
     end
 end
 
 function partnerNeedsFuel()
-    print("in partnerNeedsFuel")
     sendMessageToPartner(cNeedFuel)
     os.pullEvent("redstone")
     if redstone.getAnalogInput("back")==cYes then
@@ -220,7 +228,10 @@ function setNextStep(next)
     if debug==true then
         print("Set next step "..next)
     end
-    local file=fs.open("SnapBoxStepTracker","w")
+    local file=nil
+    while file==nil do
+       file=fs.open("SnapBoxStepTracker","w")
+    end
     file.write(next)
     file.close()
     nextStep=next
@@ -242,11 +253,58 @@ function incrementBlockCounter()
     saveSettings()
 end
 
+function incrementRowCounter()
+    settings["rowsTraveled"]=settings["rowsTraveled"]+1
+    saveSettings()
+end
+
 function checkReturn()
-    if settings["blocksTraveled"]>=settings["blocksToTravel"] and settings["blocksToTravel"]~=0 then
+    if settings["rowsTraveled"]>=settings["rowsToTravel"] and settings["rowsToTravel"]~=0 then
         return true
     else
         return false
+    end
+end
+
+function checkRow()
+    if settings["midTurn"]==true then
+        turn()
+        settings["midTurn"]=false
+        settings["blocksTraveled"]=1
+        if settings["turning"]=="left" then
+            settings["turning"]="right"
+        else
+            settings["turning"]="left"
+        end
+        saveSettings()
+    end
+    if settings["blocksTraveled"]>=settings["blocksToTravel"] and settings["blocksToTravel"]~=0 then
+        incrementRowCounter()
+        turn()
+        settings["midTurn"]=true
+        saveSettings()
+    end
+end
+
+function partnerRight()
+    if settings["blocksTraveled"]>=settings["blocksToTravel"] and settings["blocksToTravel"]~=0 and settings["turning"]=="right" then
+        sendMessageToPartner(cRight)
+        waitForMessageFromPartner(cRight)
+    end
+end
+
+function partnerLeft()
+    if settings["blocksTraveled"]>=settings["blocksToTravel"] and settings["blocksToTravel"]~=0 and settings["turning"]=="left" then
+        sendMessageToPartner(cLeft)
+        waitForMessageFromPartner(cLeft)
+    end
+end
+
+function turn()
+    if settings["turning"]=="left" then
+        turtle.turnLeft()
+    else
+        turtle.turnRight()
     end
 end
 
@@ -324,17 +382,24 @@ function doNextStep()
         setNextStep("digminingwell")
     elseif nextStep=="digminingwell" then
         digMiningWell()
+        setNextStep("partnerturn")
+    elseif nextStep=="partnerturn" then
+        partnerRight()
+        partnerLeft()
         setNextStep("partnerforward")
     elseif nextStep=="partnerforward" then
         sendMessageToPartner(cForward)
         waitForMessageFromPartner(cForward)
+        setNextStep("checkrow")
+    elseif nextStep=="checkrow" then
+        checkRow()
         setNextStep("moveforward")
     elseif nextStep=="moveforward" then
         moveForward()
         setNextStep("checkreturn")
     elseif nextStep=="checkreturn" then
         if checkReturn()==true then
-            print("going home "..settings["blocksToTravel"])
+            print("Done")
             setNextStep("gohome")
         else
             setNextStep("topoff")
@@ -349,19 +414,28 @@ function doNextStep()
     end
 end
 
+function clearScreen()
+    term.clear()
+    term.setCursorPos(1,1)
+end
 
 --------MAIN PROGRAM
-term.clear()
-term.setCursorPos(1,1)
+clearScreen()
 
 if checkResume()==false then
     --check to make sure it has all the items it needs
     checkStatus()
 
-    print("Enter the number of blocks to travel before stopping (0 or blank for never)")
+    print("Enter the number (greater than 2) of blocks to travel before the next row (0 or blank for never)")
     local input=io.read()
     if input~="" then
         settings["blocksToTravel"]=tonumber(input)
+    end
+
+    print("Enter the number of rows to travel before stopping (0 or blank for never)")
+    input=io.read()
+    if input~="" then
+        settings["rowsToTravel"]=tonumber(input)
     end
 
     --initial refuel
@@ -372,6 +446,7 @@ if checkResume()==false then
     --wait to find partner
     waitForPartner()
     nextStep="topoff"
+    saveSettings()
 else
     loadSettings()
     getNextStep()

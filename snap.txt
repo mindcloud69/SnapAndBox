@@ -2,11 +2,13 @@ local settings={}
 settings["debug"]=false
 settings["reserveFuelLevel"]=10
 settings["nextStep"]=nil
+settings["rightNext"]=false
+settings["leftNext"]=false
 
 
---CONSTANTS - Used with Redstone Signal Strength
+--CONSTANTS
 local cNone=0
-local cAcknowledged=1
+local cLeft=1
 local cYes=2
 local cNo=3
 local cPowerDown=4
@@ -15,6 +17,7 @@ local cForward=6
 local cReadyCharge=7
 local cComplete=8
 local cGoHome=9
+local cRight=10
 local cReboot=11
 local cShutdown=12
 local cClearSettings=13
@@ -92,6 +95,15 @@ function forward()
     while turtle.forward()==false do
         sleep(0.1)
     end
+    if settings["rightNext"]==true then
+        turtle.turnRight()
+        settings["rightNext"]=false
+    end
+    if settings["leftNext"]==true then
+        turtle.turnLeft()
+        settings["leftNext"]=false
+    end
+    saveSettings()
 end
 
 function readyCharge()
@@ -138,26 +150,21 @@ function waitForMessageFromPartner()
     end
     os.pullEvent("redstone")
 
-    --check to see if Box has turned and moved
-    --for future versions
+    --check to see if Box has turned and moved - only works on left turns :(
     local msg=redstone.getAnalogInput("front")
-    local msgLeft=redstone.getAnalogInput("left")
-    local msgRight=redstone.getAnalogInput("right")
-
-    if msgLeft~=0 and msg==0 then
-        turtle.turnLeft()
-        msg=msgLeft
-    end
-
-    if msgRight~=0 and msg==0 then
-        turtle.turnRight()
-        msg=msgRight
-    end
 
     if msg==cPowerDown then
         powerDown()
     elseif msg==cPowerUp then
         powerUp()
+    elseif msg==cRight then
+        settings["rightNext"]=true
+        saveSettings()
+        sendMessageToPartner(cRight)
+    elseif msg==cLeft then
+        settings["leftNext"]=true
+        saveSettings()
+        sendMessageToPartner(cLeft)
     elseif msg==cForward then
         forward()
     elseif msg==cClearSettings then

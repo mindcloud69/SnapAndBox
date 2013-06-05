@@ -5,6 +5,19 @@ local snapPastebin="YzLLYEzm"
 local launcherVersionPastebin="ZD3HcUC8"
 local clearSettingsPastebin="aa5cBF43"
 
+
+function waitForTimerOrInput(time)
+    local timer=function()
+        os.startTimer(time)
+        os.pullEvent("timer")
+    end
+
+    local input=function()
+        io.read()
+    end
+    return parallel.waitForAny(timer,input)
+end
+
 function toggleUpdates()
     term.clear()
     term.setCursorPos(1,1)
@@ -174,8 +187,14 @@ end
 
 function mainMenu()
     if checkForLastChoice()~=nil then
-        resumeLastChoice()
-        return true
+        print("Resuming in 5 seconds, press any key to stop resume.")
+        if waitForTimerOrInput(5)==1 then
+            resumeLastChoice()
+            return true
+        else
+            shell.run("clearsettings")
+            os.reboot()
+        end
     end
     term.clear()
     term.setCursorPos(1,1)
